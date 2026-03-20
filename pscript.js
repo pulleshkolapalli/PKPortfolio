@@ -4,6 +4,9 @@
 
 'use strict';
 
+// ===== GOOGLE SHEETS URL =====
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwmTlUOg3-bWod0a093a1f45LPfSDNZA4IoaIbrjeXP4ImbDX07-f_En39SEXMJDe4g/exec';
+
 // ===== LOADER =====
 const loader = document.getElementById('loader');
 const loaderFill = document.getElementById('loaderFill');
@@ -318,7 +321,7 @@ timelineBtns.forEach(btn => {
     });
 });
 
-// ===== CONTACT FORM =====
+// ===== CONTACT FORM → GOOGLE SHEETS =====
 const contactForm = document.getElementById('contactForm');
 const submitBtn = document.getElementById('submitBtn');
 const btnText = submitBtn?.querySelector('.btn-text');
@@ -329,28 +332,42 @@ if (contactForm) {
     contactForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        // Get form values
+        const formData = {
+            name: contactForm.querySelector('[name="name"]').value.trim(),
+            email: contactForm.querySelector('[name="email"]').value.trim(),
+            subject: contactForm.querySelector('[name="subject"]').value.trim(),
+            message: contactForm.querySelector('[name="message"]').value.trim()
+        };
+
         // Show loading state
         if (btnText) btnText.style.display = 'none';
         if (btnLoading) btnLoading.style.display = 'flex';
-        submitBtn.disabled = true;
+        if (submitBtn) submitBtn.disabled = true;
 
-        // Simulate sending (replace with actual EmailJS / FormSubmit / fetch)
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        try {
+            await fetch(GOOGLE_SHEET_URL, {
+                method: 'POST',
+                mode: 'no-cors', // required for Google Apps Script
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
 
-        // Show success
-        if (btnText) btnText.style.display = 'flex';
-        if (btnLoading) btnLoading.style.display = 'none';
-        submitBtn.disabled = false;
+            // Show success message
+            if (formSuccess) {
+                formSuccess.style.display = 'flex';
+                setTimeout(() => { formSuccess.style.display = 'none'; }, 5000);
+            }
+            contactForm.reset();
 
-        if (formSuccess) {
-            formSuccess.style.display = 'flex';
-            setTimeout(() => { formSuccess.style.display = 'none'; }, 5000);
+        } catch (error) {
+            alert('Something went wrong. Please email me directly at pulleskolapalli810@gmail.com');
+            console.error('Form error:', error);
+        } finally {
+            if (btnText) btnText.style.display = 'flex';
+            if (btnLoading) btnLoading.style.display = 'none';
+            if (submitBtn) submitBtn.disabled = false;
         }
-        contactForm.reset();
-
-        // TODO: Replace the simulation above with real form handler, e.g.:
-        // EmailJS: emailjs.sendForm('SERVICE_ID', 'TEMPLATE_ID', contactForm, 'PUBLIC_KEY')
-        // FormSubmit: fetch('https://formsubmit.co/ajax/YOUR_EMAIL', { method: 'POST', body: new FormData(contactForm) })
     });
 }
 
